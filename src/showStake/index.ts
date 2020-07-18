@@ -6,7 +6,7 @@ import getStakeCount from '../getInfo/getStakeCount';
 import getMarketKey from './getMarketKey';
 import getSafeKey from './getSafeKey';
 import getPinnacleBetType from './getbetType';
-import { setBetId, getIsLoaded } from '../stakeData';
+import { setBetId, getIsLoaded, setIsNeedTrackLoad } from '../stakeData';
 import { setStakeEnabled } from '../getInfo/checkStakeEnabled';
 
 interface PinnacleEvent {
@@ -102,10 +102,7 @@ const showStake = async (): Promise<void> => {
     // overtimeType,
   } = JSON.parse(worker.ForkObj) as WorkerBetObject;
 
-  const eventId = Number(worker.EventId.split('_')[0]);
-
-  worker.Helper.WriteLine(`EventId1 = ${worker.EventId.split('_')[0]}`);
-  worker.Helper.WriteLine(`EventId2 = ${worker.EventId.split('_')[1]}`);
+  const eventId = Number(worker.EventId);
 
   const payload: PinnaclePayload = {
     cards: undefined,
@@ -256,6 +253,7 @@ const showStake = async (): Promise<void> => {
   };
   setBetId(payload.marketKey);
   setStakeEnabled(true);
+  setIsNeedTrackLoad(true);
   console.log(data);
   (getReactInstance(
     document.querySelector('#root > div')
@@ -266,20 +264,17 @@ const showStake = async (): Promise<void> => {
     worker.JSFail();
     return;
   }
-  isOpenedCoupon = await awaiter(getIsLoaded);
+  isOpenedCoupon = await awaiter(getIsLoaded, 10000);
   if (!isOpenedCoupon) {
     worker.Helper.WriteLine('Купон так и не раскрылся');
     worker.JSFail();
     return;
   }
-  if (document.querySelector('[class^=style_maxWager__]')) {
-    console.log(
-      `maxWager = ${
-        document.querySelector('[class^=style_maxWager__]').textContent
-      }`
-    );
+  const maxWagerElement = await getElement('[class^=style_maxWager__]');
+  if (!maxWagerElement) {
+    worker.Helper.WriteLine('Максимум не загрузился');
   } else {
-    console.log('No maxWager element');
+    worker.Helper.WriteLine(`Максимум = ${maxWagerElement.textContent}`);
   }
   worker.JSStop();
 };
