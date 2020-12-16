@@ -1,7 +1,7 @@
 {
   "devDependencies": {
-    "@kot-shrodingera-team/config": "^1.0.16",
-    "@rollup/plugin-node-resolve": "^8.0.0"
+    "@kot-shrodingera-team/config": "^1.0.36",
+    "@rollup/plugin-node-resolve": "^8.4.0"
   },
   "dependencies": {
     "@rollup/plugin-typescript": "^4.1.2"

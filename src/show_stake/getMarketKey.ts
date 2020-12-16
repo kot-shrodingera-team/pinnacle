@@ -1,10 +1,12 @@
+import { log } from '@kot-shrodingera-team/config/util';
 import getPinnacleBetType from './getbetType';
 
 const getMarketKey = (
   market: string,
   period: number,
   side: string,
-  parameter: number
+  parameter: number,
+  scoreOffset: number
 ): string => {
   const betType = getPinnacleBetType(market);
   const betTypeShort = getPinnacleBetType(market, true);
@@ -12,16 +14,21 @@ const getMarketKey = (
   if (betType === 'moneyline') {
     return key;
   }
+  log(`parameter: ${parameter}`, 'steelblue');
   const fixedParameter = ((): string => {
     let result = parameter;
-    if (side === 'away') {
-      result = -result;
+    if (betType === 'spread') {
+      if (side === 'away') {
+        result = -result;
+      }
+      result += scoreOffset;
     }
     if (Number.isInteger(result)) {
-      return parameter.toFixed(1);
+      return result.toFixed(1);
     }
-    return String(parameter);
+    return String(result);
   })();
+  log(`fixedParameter: ${fixedParameter}`, 'steelblue');
   key = `${key};${fixedParameter}`;
   if (betType !== 'team_total') {
     return key;
@@ -32,8 +39,9 @@ const getMarketKey = (
   if (/^OU2$/i.test(market)) {
     return `${key};away`;
   }
-  worker.Helper.WriteLine(
-    `Ошибка формирования getMarketKey при индивидуальном тотале (market: ${market})`
+  log(
+    `Ошибка формирования getMarketKey при индивидуальном тотале (market: ${market})`,
+    'crimson'
   );
   return '';
 };

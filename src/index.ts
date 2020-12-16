@@ -1,25 +1,23 @@
-import './workerCheck';
+import '@kot-shrodingera-team/config/workerCheck';
 import './globalDefines/request';
 import './requestSubscribes';
-import { pipeHwlToConsole } from '@kot-shrodingera-team/config/util';
-import authorize from './authorize';
-import getStakeInfo from './callbacks/getStakeInfo';
-import setStakeSumm from './callbacks/setStakeSum';
-import doStake from './callbacks/doStake';
-import checkCouponLoading from './callbacks/checkCouponLoading';
-import checkStakeStatus from './callbacks/checkStakeStatus';
-import showStake from './showStake';
-import afterSuccesfulStake from './callbacks/afterSuccesfulStake';
-
-pipeHwlToConsole();
+import { log } from '@kot-shrodingera-team/config/util';
+import getStakeInfo from './worker_callbacks/getStakeInfo';
+import setStakeSumm from './worker_callbacks/setStakeSum';
+import doStake from './worker_callbacks/doStake';
+import checkCouponLoading from './worker_callbacks/checkCouponLoading';
+import checkStakeStatus from './worker_callbacks/checkStakeStatus';
+import showStake from './show_stake';
+import afterSuccesfulStake from './worker_callbacks/afterSuccesfulStake';
+import initialize from './initialization';
+import { setMinimumStake } from './stake_info/getMinimumStake';
 
 (async (): Promise<void> => {
-  console.log('Begin');
-  if (worker.IsShowStake) {
-    worker.Helper.WriteLine('Открываем вилку');
-    await showStake();
+  log('Загрузка страницы', 'steelblue');
+  if (!worker.IsShowStake) {
+    initialize();
   } else {
-    await authorize();
+    showStake();
   }
 })();
 
@@ -34,7 +32,8 @@ worker.SetCallBacks(
 );
 
 const fastLoad = async (): Promise<void> => {
-  worker.Helper.WriteLine('Быстрая загрузка');
+  log('Быстрая загрузка', 'steelblue');
+  setMinimumStake(0);
   await showStake();
 };
 

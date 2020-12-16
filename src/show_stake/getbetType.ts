@@ -1,3 +1,5 @@
+import { log } from '@kot-shrodingera-team/config/util';
+
 const getPinnacleBetType = (market: string, short = false): string => {
   if (/^OU$/i.test(market)) {
     return short ? 'ou' : 'total';
@@ -11,7 +13,7 @@ const getPinnacleBetType = (market: string, short = false): string => {
   if (/^F$/i.test(market)) {
     return short ? 's' : 'spread';
   }
-  worker.Helper.WriteLine(`Необрабатываемый маркет: ${market}`);
+  log(`Необрабатываемый маркет: ${market}`, 'scrimson');
   return null;
 };
 
