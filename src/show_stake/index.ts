@@ -75,6 +75,11 @@ const showStake = async (): Promise<void> => {
     return;
   }
 
+  log(
+    `Ищем ставку\nСобытие: ${worker.TeamOne} - ${worker.TeamTwo}\nИсход: ${worker.BetName}`,
+    'steelblue'
+  );
+
   const {
     market,
     odd,
