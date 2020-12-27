@@ -88,9 +88,12 @@ const showStake = async (): Promise<void> => {
     // overtimeType,
   } = JSON.parse(worker.ForkObj) as WorkerBetObject;
 
-  const [marketName, betIdScore, matchupId] = worker.BetId.split('|');
+  const {
+    score: betIdScore,
+    matchup_id: matchupId,
+    rc_score: redCardsBetIdScore = '',
+  } = JSON.parse(worker.BetId);
   const pinnaclePeriod = [2, 121].includes(worker.SportId) ? 0 : period;
-  const eventId = Number(worker.EventId);
 
   const payload: PinnaclePayload = {
     cards: undefined,
@@ -105,67 +108,25 @@ const showStake = async (): Promise<void> => {
     type: getPinnacleBetType(market),
   };
 
-  log('Получаем информацию о событии', 'steelblue');
-  const eventResponse = await (async (): Promise<Response> => {
-    try {
-      return await fetch(
-        // eslint-disable-next-line prefer-template
-        'https://api.arcadia.pinnacle.com/0.1/matchups/' + eventId,
-        {
-          method: 'get',
-          headers: { 'x-api-key': 'CmX2KcMrXuFmNg6YFbmTxE0y9CIrOi0R' },
-        }
-      );
-    } catch (e) {
-      log(`Ошибка запроса данных о событии: ${e}`, 'red');
-      return null;
-    }
-  })();
-  if (!eventResponse) {
-    worker.JSFail();
-    return;
-  }
-  const eventJson = (await eventResponse.json()) as PinnacleEvent;
-  if (!eventJson || eventJson.status === 404) {
-    log('Событие не найдено', 'red');
-    worker.JSFail();
-    return;
-  }
-  log('Получили информацию о событии', 'steelblue');
-  const betIdScoreRegex = /(\d+):(\d+)$/;
-  const betIdScoreMatch = betIdScore.match(betIdScoreRegex);
+  log('Payload initialized', 'white', true);
+
+  const scoreRegex = /(\d+):(\d+)$/;
+
+  const betIdScoreMatch = betIdScore.match(scoreRegex);
   const betIdScore1 = betIdScoreMatch ? Number(betIdScoreMatch[1]) : 0;
   const betIdScore2 = betIdScoreMatch ? Number(betIdScoreMatch[2]) : 0;
-
-  // const score1 =
-  //   eventJson.participants &&
-  //   eventJson.participants[0].state &&
-  //   eventJson.participants[0].state.score
-  //     ? eventJson.participants[0].state.score
-  //     : 0;
-  // const score2 =
-  //   eventJson.participants &&
-  //   eventJson.participants[1].state &&
-  //   eventJson.participants[1].state.score
-  //     ? eventJson.participants[1].state.score
-  //     : 0;
-
-  // payload.score = score1 + score2;
   payload.score = betIdScore1 + betIdScore2;
 
-  const cards1 =
-    eventJson.participants &&
-    eventJson.participants[0].state &&
-    eventJson.participants[0].state.redCards
-      ? eventJson.participants[0].state.redCards
-      : 0;
-  const cards2 =
-    eventJson.participants &&
-    eventJson.participants[1].state &&
-    eventJson.participants[1].state.redCards
-      ? eventJson.participants[1].state.redCards
-      : 0;
-  payload.cards = cards1 + cards2;
+  const redCardsBetIdScoreMatch = redCardsBetIdScore.match(scoreRegex);
+  const redCardsBetIdScore1 = redCardsBetIdScoreMatch
+    ? Number(redCardsBetIdScoreMatch[1])
+    : 0;
+  const redCardsBetIdScore2 = redCardsBetIdScoreMatch
+    ? Number(redCardsBetIdScoreMatch[2])
+    : 0;
+  payload.cards = redCardsBetIdScore1 + redCardsBetIdScore2;
+
+  log('Score and red cards processed', 'white', true);
 
   if (/^TU$/i.test(odd)) {
     payload.designation = 'under';
@@ -183,7 +144,6 @@ const showStake = async (): Promise<void> => {
     payload.designation = 'draw';
   }
 
-  // const scoreOffset = score1 - score2;
   const scoreOffset = betIdScore1 - betIdScore2;
   payload.marketKey = getMarketKey(
     market,
@@ -192,6 +152,9 @@ const showStake = async (): Promise<void> => {
     param,
     scoreOffset
   );
+
+  log('MarketKey processed', 'white', true);
+
   const side = ((): string => {
     if (/^OU1$/i.test(market)) {
       return 'home';
@@ -208,64 +171,9 @@ const showStake = async (): Promise<void> => {
     side
   );
 
-  log('Получаем информацию о маркетах', 'steelblue');
-  const marketsResponse = await (async (): Promise<Response> => {
-    try {
-      return await fetch(
-        // eslint-disable-next-line prefer-template
-        'https://api.arcadia.pinnacle.com/0.1/matchups/' +
-          eventId +
-          '/markets/related/straight',
-        {
-          method: 'get',
-          headers: { 'x-api-key': 'CmX2KcMrXuFmNg6YFbmTxE0y9CIrOi0R' },
-        }
-      );
-    } catch (e) {
-      log(`Ошибка запроса данных о маркетах: ${e}`, 'red');
-      return null;
-    }
-  })();
-  if (!marketsResponse) {
-    worker.JSFail();
-    return;
-  }
-  const marketsJson = (await marketsResponse.json()) as PinnacleMarket[];
-  log('Получили информацию о маркетах', 'steelblue');
+  log('SafeKey processed', 'white', true);
 
-  const betType = getPinnacleBetType(market);
-
-  // log(
-  //   `Search for ${pinnaclePeriod}|${payload.marketKey}|${betType}|${matchupId}`,
-  //   'orange'
-  // );
-  const targetMarket = marketsJson.find((pinnacleMarket) => {
-    // log(
-    //   `${pinnacleMarket.period}|${pinnacleMarket.key}|${pinnacleMarket.type}|${pinnacleMarket.matchupId}`,
-    //   'coral'
-    // );
-    return (
-      pinnacleMarket.period === pinnaclePeriod &&
-      pinnacleMarket.key === payload.marketKey &&
-      pinnacleMarket.type === betType &&
-      pinnacleMarket.matchupId === Number(matchupId)
-    );
-  });
-  // log(`Счёт из API: ${score1}:${score2}`, 'steelblue');
-  // log(`Счёт из BetId: ${betIdScore1}:${betIdScore2}`, 'steelblue');
-  // log(`scoreOffset: ${scoreOffset}`);
-
-  if (!targetMarket) {
-    log('Нужный маркет не найден', 'red');
-    worker.JSFail();
-    return;
-  }
-  log('Нужный маркет найден', 'steelblue');
-
-  const targetPrice = targetMarket.prices.find(
-    (price) => price.designation === payload.designation
-  );
-  payload.price = targetPrice.price;
+  payload.price = 100;
 
   const data = {
     type: 'Selections/ADD_TO_SELECTIONS',
@@ -281,6 +189,7 @@ const showStake = async (): Promise<void> => {
     return;
   }
   log('Делаем запрос на открытие купона', 'steelblue');
+  log(JSON.stringify(data), 'white', true);
   reactInstance.return.stateNode.props.dispatch(data);
   const betAdded = await awaiter(() => getStakeCount() === 1);
   if (!betAdded) {
