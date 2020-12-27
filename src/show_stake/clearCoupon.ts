@@ -1,12 +1,12 @@
-import { awaiter, log, sleep } from '@kot-shrodingera-team/config/util';
+import { awaiter, log } from '@kot-shrodingera-team/config/util';
 import getStakeCount from '../stake_info/getStakeCount';
-import getMaximumStake from '../stake_info/getMaximumStake';
+// import getMaximumStake from '../stake_info/getMaximumStake';
 
 const clearCoupon = async (): Promise<boolean> => {
   const stakeCount = getStakeCount();
   if (stakeCount !== 0) {
     log(`Купон не пуст (ставок: ${stakeCount}). Очищаем`, 'orange');
-    await sleep(1000);
+    // await sleep(1000);
     if (stakeCount === 1) {
       const clearCouponButton = document.querySelector(
         '.style_close__16Jzt'
