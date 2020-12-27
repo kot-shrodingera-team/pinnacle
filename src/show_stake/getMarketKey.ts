@@ -14,7 +14,7 @@ const getMarketKey = (
   if (betType === 'moneyline') {
     return key;
   }
-  log(`parameter: ${parameter}`, 'steelblue');
+  log(`parameter: ${parameter}`, 'white', true);
   const fixedParameter = ((): string => {
     let result = parameter;
     if (betType === 'spread') {
@@ -28,7 +28,7 @@ const getMarketKey = (
     }
     return String(result);
   })();
-  log(`fixedParameter: ${fixedParameter}`, 'steelblue');
+  log(`fixedParameter: ${fixedParameter}`, 'white', true);
   key = `${key};${fixedParameter}`;
   if (betType !== 'team_total') {
     return key;
