@@ -1,6 +1,5 @@
 import { log } from '@kot-shrodingera-team/config/util';
 import { clearDoStakeTime } from '../doStakeTime';
-import { clearStakeProcessingHungMessageSend } from './checkCouponLoading';
 
 const doStake = (): boolean => {
   log('Делаем ставку', 'orange');
@@ -13,7 +12,9 @@ const doStake = (): boolean => {
   }
   stakeButton.click();
   clearDoStakeTime();
-  clearStakeProcessingHungMessageSend();
+  localStorage.setItem('loaderAppeared', '0');
+  localStorage.setItem('loaderDisappearedTime', '');
+  localStorage.setItem('betPlaced', '0');
   return true;
 };
 

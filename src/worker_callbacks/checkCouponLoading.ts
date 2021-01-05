@@ -1,29 +1,57 @@
 import { log } from '@kot-shrodingera-team/config/util';
 import { getDoStakeTime } from '../doStakeTime';
+import getBalance from '../stake_info/getBalance';
 
-let stakeProcessingHungMessageSend = false;
-export const clearStakeProcessingHungMessageSend = (): void => {
-  stakeProcessingHungMessageSend = false;
+const timeString = (time: Date): string => {
+  const hours = String(time.getHours()).padStart(2, '0');
+  const minutes = String(time.getMinutes()).padStart(2, '0');
+  const seconds = String(time.getSeconds()).padStart(2, '0');
+  const miliseconds = String(time.getMilliseconds()).padStart(3, '0');
+  return `${hours}:${minutes}:${seconds}.${miliseconds}`;
 };
 
+const stakeInfoString = (): string => {
+  return (
+    `Событие: ${worker.TeamOne} vs ${worker.TeamTwo}\n` +
+    `Ставка: ${worker.BetName}\n` +
+    `Сумма: ${worker.StakeInfo.Summ}\n` +
+    `Коэффициент: ${worker.StakeInfo.Coef}`
+  );
+};
+
+const round = (value: number, precision = 2): number =>
+  Number(value.toFixed(precision));
+
 const checkCouponLoading = (): boolean => {
-  const timePassedSinceDoStake =
-    new Date().getTime() - getDoStakeTime().getTime();
-  if (!stakeProcessingHungMessageSend && timePassedSinceDoStake > 60000) {
-    worker.TakeScreenShot(false);
+  const now = new Date();
+  const doStakeTime = getDoStakeTime();
+  const timePassedSinceDoStake = now.getTime() - doStakeTime.getTime();
+  const timeout = 60000;
+  if (timePassedSinceDoStake > timeout) {
+    log(`now = ${now.getTime()}`);
+    log(`doStakeTime = ${doStakeTime.getTime()}`);
+    log(`timePassedSinceDoStake = ${timePassedSinceDoStake}`);
+    log(`timeout = ${timeout}`);
+    log(
+      `Текущее время: ${timeString(now)}, время ставки: ${timeString(
+        doStakeTime
+      )}`
+    );
     const message =
-      `В Pinnacle очень долгое принятие ставки (более минуты). Возможно зависание\n` +
-      `Событие: ${worker.TeamOne} - ${worker.TeamTwo}\n` +
-      `Ставка: ${worker.BetName}\n` +
-      `Сумма: ${worker.StakeInfo.Summ}\n` +
-      `Коэффициент: ${worker.StakeInfo.Coef}\n`;
+      `В Pinnacle очень долгое принятие ставки\n` +
+      `Бот засчитает ставку как НЕ принятую\n` +
+      `${stakeInfoString()}\n` +
+      `Пожалуйста, проверьте самостоятельно. Если всё плохо - пишите в ТП`;
     worker.Helper.SendInformedMessage(message);
-    worker.Helper.WriteLine('Очень долгое принятие ставки. Возможно зависание');
-    stakeProcessingHungMessageSend = true;
+    log('Слишком долгая обработка, считаем ставку непринятой', 'crimson');
+    return false;
   }
   const loader = document.querySelector('.style_loading__3V5m8');
   if (loader) {
     log('Обработка ставки (есть иконка обработки)', 'tan');
+    if (localStorage.getItem('loaderAppeared') === '0') {
+      localStorage.setItem('loaderAppeared', '1');
+    }
     return true;
   }
   const betCardMessage = document.querySelector(
@@ -41,6 +69,51 @@ const checkCouponLoading = (): boolean => {
     }
     if (betCardMessage) {
       log('Обработка ставки завершена (непонятный результат)', 'tan');
+      return false;
+    }
+  }
+  if (
+    localStorage.getItem('loaderAppeared') === '1' &&
+    localStorage.getItem('loaderDisappearedTime') === ''
+  ) {
+    log('Пропала иконка обработки', 'steelblue');
+    localStorage.setItem('loaderDisappearedTime', String(now.getTime()));
+  }
+  if (localStorage.getItem('loaderDisappearedTime') !== '') {
+    const diff = round(worker.StakeInfo.Balance - getBalance());
+    log(`Баланс был: ${worker.StakeInfo.Balance}`, 'steelblue');
+    log(`Текущий баланс: ${getBalance()}`, 'steelblue');
+    log(`Ставилось: ${worker.StakeInfo.Summ}`, 'steelblue');
+    log(`Разница: ${diff}`, 'steelblue');
+    if (diff === worker.StakeInfo.Summ) {
+      log(
+        'Баланс уменьшился на сумму ставки. Считаем ставку принятой',
+        'orange'
+      );
+      const message =
+        `В Pinnacle пропал купон во время обработки ставки\n` +
+        `Баланс уменьшился на сумму ставки\n` +
+        `Считаем ставку принятой\n` +
+        `${stakeInfoString()}\n` +
+        `Пожалуйста, проверьте самостоятельно. Если всё плохо - пишите в ТП`;
+      worker.Helper.SendInformedMessage(message);
+      localStorage.setItem('betPlaced', '1');
+      return false;
+    }
+    log('Баланс не уменьшился на сумму ставки', 'steelblue');
+    const loaderDisappearedTime = new Date(
+      Number(localStorage.getItem('loaderDisappearedTime'))
+    );
+    if (now.getTime() - loaderDisappearedTime.getTime() > 3000) {
+      log('Прошло больше 3 секунды после исчезновения лоадера', 'steelblue');
+      const message =
+        `В Pinnacle пропал купон во время обработки ставки\n` +
+        `Прошло больше 3 секунд\n` +
+        `Баланс не уменьшился на сумму ставки\n` +
+        `Считаем ставку НЕ принятой\n` +
+        `${stakeInfoString()}\n` +
+        `Пожалуйста, проверьте самостоятельно. Если всё плохо - пишите в ТП`;
+      worker.Helper.SendInformedMessage(message);
       return false;
     }
   }

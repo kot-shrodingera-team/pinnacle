@@ -2,6 +2,11 @@ import { log } from '@kot-shrodingera-team/config/util';
 import { updateBalance } from '../stake_info/getBalance';
 
 const checkStakeStatus = (): boolean => {
+  if (localStorage.getItem('betPlaced') === '1') {
+    log('Ставка принята', 'green');
+    updateBalance();
+    return true;
+  }
   const betCardMessage = document.querySelector(
     '[data-test-id="Betslip-CardMessage"]'
   );
