@@ -75,6 +75,12 @@ const showStake = async (): Promise<void> => {
     return;
   }
 
+  if (!window.location.pathname.startsWith('/en')) {
+    log('Открыта не английсая версия сайта. Переключаем', 'orange');
+    window.location.pathname = '/en/';
+    return;
+  }
+
   log(
     `Ищем ставку\nСобытие: ${worker.TeamOne} - ${worker.TeamTwo}\nИсход: ${worker.BetName}`,
     'steelblue'
