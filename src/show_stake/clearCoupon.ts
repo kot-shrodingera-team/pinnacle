@@ -9,7 +9,7 @@ const clearCoupon = async (): Promise<boolean> => {
     // await sleep(1000);
     if (stakeCount === 1) {
       const clearCouponButton = document.querySelector(
-        '.style_close__16Jzt'
+        '.betslip-close-button'
       ) as HTMLElement;
       if (!clearCouponButton) {
         log('Не найдена кнопка очистки купона', 'crimson');
