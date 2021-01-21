@@ -60,17 +60,14 @@ const checkCouponLoading = (): boolean => {
   if (betCardMessage) {
     const betCardMessageStyle = betCardMessage.getAttribute('style');
     if (betCardMessageStyle.includes('global-messages-warning')) {
-      log('Обработка ставки завершена (ошибка ставки)', 'tan');
+      log('Обработка ставки завершена (ошибка ставки)', 'orange');
       return false;
     }
     if (betCardMessageStyle.includes('betslip-cardMessage-accepted-color')) {
-      log('Обработка ставки завершена (ставка принята)', 'tan');
+      log('Обработка ставки завершена (ставка принята)', 'orange');
       return false;
     }
-    if (betCardMessage) {
-      log('Обработка ставки завершена (непонятный результат)', 'tan');
-      return false;
-    }
+    log('Обработка ставки (непонятный результат)', 'tan');
   }
   if (
     localStorage.getItem('loaderAppeared') === '1' &&
