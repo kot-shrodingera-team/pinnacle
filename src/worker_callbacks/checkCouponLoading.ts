@@ -46,7 +46,7 @@ const checkCouponLoading = (): boolean => {
     log('Слишком долгая обработка, считаем ставку непринятой', 'crimson');
     return false;
   }
-  const loader = document.querySelector('.style_loading__3V5m8');
+  const loader = document.querySelector('.style_processing__5bJrD');
   if (loader) {
     log('Обработка ставки (есть иконка обработки)', 'tan');
     if (localStorage.getItem('loaderAppeared') === '0') {
