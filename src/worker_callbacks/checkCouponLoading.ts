@@ -1,121 +1,164 @@
-import { log } from '@kot-shrodingera-team/config/util';
-import { getDoStakeTime } from '../doStakeTime';
-import getBalance from '../stake_info/getBalance';
+import { log } from '@kot-shrodingera-team/germes-utils';
+import { getReactInstance } from '@kot-shrodingera-team/germes-utils/reactUtils';
+import updateQuote from '../show_stake/updateQuote';
 
-const timeString = (time: Date): string => {
-  const hours = String(time.getHours()).padStart(2, '0');
-  const minutes = String(time.getMinutes()).padStart(2, '0');
-  const seconds = String(time.getSeconds()).padStart(2, '0');
-  const miliseconds = String(time.getMilliseconds()).padStart(3, '0');
-  return `${hours}:${minutes}:${seconds}.${miliseconds}`;
+const getStoreState = () => {
+  const account = document.querySelector('[data-gtm-id="super_nav_account"]');
+  if (!account) {
+    return null;
+  }
+  return (getReactInstance(
+    account
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ) as any).return.return.return.memoizedProps.value.store.getState();
 };
-
-const stakeInfoString = (): string => {
-  return (
-    `Событие: ${worker.TeamOne} vs ${worker.TeamTwo}\n` +
-    `Ставка: ${worker.BetName}\n` +
-    `Сумма: ${worker.StakeInfo.Summ}\n` +
-    `Коэффициент: ${worker.StakeInfo.Coef}`
-  );
-};
-
-const round = (value: number, precision = 2): number =>
-  Number(value.toFixed(precision));
 
 const checkCouponLoading = (): boolean => {
-  const now = new Date();
-  const doStakeTime = getDoStakeTime();
-  const timePassedSinceDoStake = now.getTime() - doStakeTime.getTime();
-  const timeout = 60000;
-  if (timePassedSinceDoStake > timeout) {
-    log(`now = ${now.getTime()}`);
-    log(`doStakeTime = ${doStakeTime.getTime()}`);
-    log(`timePassedSinceDoStake = ${timePassedSinceDoStake}`);
-    log(`timeout = ${timeout}`);
-    log(
-      `Текущее время: ${timeString(now)}, время ставки: ${timeString(
-        doStakeTime
-      )}`
-    );
-    const message =
-      `В Pinnacle очень долгое принятие ставки\n` +
-      `Бот засчитает ставку как НЕ принятую\n` +
-      `${stakeInfoString()}\n` +
-      `Пожалуйста, проверьте самостоятельно. Если всё плохо - пишите в ТП`;
-    worker.Helper.SendInformedMessage(message);
-    log('Слишком долгая обработка, считаем ставку непринятой', 'crimson');
-    return false;
-  }
-  const loader = document.querySelector('.style_processing__5bJrD');
-  if (loader) {
-    log('Обработка ставки (есть иконка обработки)', 'tan');
-    if (localStorage.getItem('loaderAppeared') === '0') {
-      localStorage.setItem('loaderAppeared', '1');
+  if (window.germesInfo.loadingStep === 'waitStraight') {
+    if (!window.germesInfo.straightResponse) {
+      log('Обработка ставки (нет ответа о ставке)', 'tan');
+      return true;
     }
+    if (!('status' in window.germesInfo.straightResponse)) {
+      log('Нет статуса в ответе на запрос ставки', 'crimson');
+      log('Обработка ставки завершена', 'orange');
+      window.germesInfo.loadingStep = 'beforeUpdateQuote';
+      return true;
+    }
+    if (window.germesInfo.straightResponse.status !== 'PENDING_ACCEPTANCE') {
+      if ('title' in window.germesInfo.straightResponse) {
+        log(
+          `Ошибка запроса ставки (${window.germesInfo.straightResponse.title})`,
+          'crimson'
+        );
+        log('Обработка ставки завершена', 'orange');
+        window.germesInfo.loadingStep = 'beforeUpdateQuote';
+        return true;
+      }
+      log(
+        `Ошибка запроса ставки (${window.germesInfo.straightResponse.status})`,
+        'crimson'
+      );
+      log('Обработка ставки завершена', 'orange');
+      window.germesInfo.loadingStep = 'beforeUpdateQuote';
+      return true;
+    }
+    if (!('requestId' in window.germesInfo.straightResponse)) {
+      log('Нет requestId в ответе на запрос ставки', 'crimson');
+      log('Обработка ставки завершена', 'orange');
+      window.germesInfo.loadingStep = 'beforeUpdateQuote';
+      return true;
+    }
+    window.germesInfo.requestId = window.germesInfo.straightResponse.requestId;
+    log(
+      `requestId: ${window.germesInfo.straightResponse.requestId}`,
+      'white',
+      true
+    );
+    window.germesInfo.loadingStep = 'sendPending';
     return true;
   }
-  const betCardMessage = document.querySelector(
-    '[data-test-id="Betslip-CardMessage"]'
-  );
-  if (betCardMessage) {
-    const betCardMessageStyle = betCardMessage.getAttribute('style');
-    if (betCardMessageStyle.includes('global-messages-warning')) {
-      log('Обработка ставки завершена (ошибка ставки)', 'orange');
+  if (window.germesInfo.loadingStep === 'sendPending') {
+    const state = getStoreState();
+    if (!state) {
+      log('Ошибка ставки: Не найдены мета данные аккаунта', 'crimson');
       return false;
     }
-    if (betCardMessageStyle.includes('betslip-cardMessage-accepted-color')) {
-      log('Обработка ставки завершена (ставка принята)', 'orange');
-      return false;
-    }
-    log('Обработка ставки (непонятный результат)', 'tan');
+    window.germesInfo.pendingResponse = null;
+    fetch(
+      // eslint-disable-next-line prefer-template
+      'https://api.arcadia.pinnacle.com/0.1/bets/pending/' +
+        window.germesInfo.requestId,
+      {
+        method: 'get',
+        headers: {
+          'X-API-Key': 'CmX2KcMrXuFmNg6YFbmTxE0y9CIrOi0R',
+          'X-Device-UUID': state.User.uuid,
+          ...(state.User.token ? { 'X-Session': state.User.token } : {}),
+        },
+      }
+    )
+      .then((r) => r.json())
+      .then((r) => {
+        window.germesInfo.pendingResponse = r;
+      });
+    window.germesInfo.loadingStep = 'pending';
+    return true;
   }
-  if (
-    localStorage.getItem('loaderAppeared') === '1' &&
-    localStorage.getItem('loaderDisappearedTime') === ''
-  ) {
-    log('Пропала иконка обработки', 'steelblue');
-    localStorage.setItem('loaderDisappearedTime', String(now.getTime()));
-  }
-  if (localStorage.getItem('loaderDisappearedTime') !== '') {
-    const diff = round(worker.StakeInfo.Balance - getBalance());
-    log(`Баланс был: ${worker.StakeInfo.Balance}`, 'steelblue');
-    log(`Текущий баланс: ${getBalance()}`, 'steelblue');
-    log(`Ставилось: ${worker.StakeInfo.Summ}`, 'steelblue');
-    log(`Разница: ${diff}`, 'steelblue');
-    if (diff === worker.StakeInfo.Summ) {
-      log(
-        'Баланс уменьшился на сумму ставки. Считаем ставку принятой',
-        'orange'
-      );
-      const message =
-        `В Pinnacle пропал купон во время обработки ставки\n` +
-        `Баланс уменьшился на сумму ставки\n` +
-        `Считаем ставку принятой\n` +
-        `${stakeInfoString()}\n` +
-        `Пожалуйста, проверьте самостоятельно. Если всё плохо - пишите в ТП`;
-      worker.Helper.SendInformedMessage(message);
-      localStorage.setItem('betPlaced', '1');
+  if (window.germesInfo.loadingStep === 'pending') {
+    if (!window.germesInfo.pendingResponse) {
+      log('Обработка ставки (ожидание pending)', 'tan');
+      return true;
+    }
+    if (!('status' in window.germesInfo.pendingResponse)) {
+      log('Нет статуса в ответе на запрос pending', 'crimson');
+      log('Обработка ставки завершена', 'orange');
       return false;
     }
-    log('Баланс не уменьшился на сумму ставки', 'steelblue');
-    const loaderDisappearedTime = new Date(
-      Number(localStorage.getItem('loaderDisappearedTime'))
+    if (window.germesInfo.pendingResponse.status === 'pending') {
+      log('Обработка ставки (pending)', 'tan');
+      window.germesInfo.pendingDelay = false;
+      setTimeout(() => {
+        window.germesInfo.pendingDelay = true;
+      }, 1000);
+      window.germesInfo.loadingStep = 'pendingDelay';
+      return true;
+    }
+    if (window.germesInfo.pendingResponse.status === 'unsettled') {
+      log('Обработка ставки завершена (unsettled)', 'orange');
+      window.germesInfo.betPlaced = true;
+      return false;
+    }
+    if (window.germesInfo.pendingResponse.status === 'rejected') {
+      log('Обработка ставки завершена (rejected)', 'orange');
+      window.germesInfo.loadingStep = 'beforeUpdateQuote';
+      return true;
+    }
+    log(
+      `Неизвестный статус pending: ${window.germesInfo.pendingResponse.status}`,
+      'crimson'
     );
-    if (now.getTime() - loaderDisappearedTime.getTime() > 3000) {
-      log('Прошло больше 3 секунды после исчезновения лоадера', 'steelblue');
-      const message =
-        `В Pinnacle пропал купон во время обработки ставки\n` +
-        `Прошло больше 3 секунд\n` +
-        `Баланс не уменьшился на сумму ставки\n` +
-        `Считаем ставку НЕ принятой\n` +
-        `${stakeInfoString()}\n` +
-        `Пожалуйста, проверьте самостоятельно. Если всё плохо - пишите в ТП`;
-      worker.Helper.SendInformedMessage(message);
-      return false;
-    }
+    log('Обработка ставки завершена', 'orange');
+    window.germesInfo.loadingStep = 'beforeUpdateQuote';
+    return true;
   }
-  log('Обработка ставки (нет иконки обработки)', 'tan');
-  return true;
+  if (window.germesInfo.loadingStep === 'pendingDelay') {
+    if (!window.germesInfo.pendingDelay) {
+      log('Обработка ставки (pending delay)', 'tan');
+      return true;
+    }
+    log('Обработка ставки (pending delay end)', 'tan');
+    window.germesInfo.loadingStep = 'sendPending';
+    return true;
+  }
+  if (window.germesInfo.loadingStep === 'beforeUpdateQuote') {
+    log('Обновляем данные о ставке', 'tan');
+    updateQuote().then((result) => {
+      if (result !== 'success') {
+        log(result, 'crimson');
+        window.germesInfo.loadingStep = 'updateQuoteFail';
+      } else {
+        window.germesInfo.loadingStep = 'updateQuoteOk';
+      }
+    });
+    window.germesInfo.loadingStep = 'updateQuote';
+    return true;
+  }
+  if (window.germesInfo.loadingStep === 'updateQuote') {
+    log('Обновляем данные о ставке (ожидание)', 'tan');
+    return true;
+  }
+  if (window.germesInfo.loadingStep === 'updateQuoteFail') {
+    log('Ошибка обновления данных о ставке', 'orange');
+    return false;
+  }
+  if (window.germesInfo.loadingStep === 'updateQuoteOk') {
+    log('Обновили данные о ставке', 'orange');
+    return false;
+  }
+  log(`Неизвестный step: ${window.germesInfo.loadingStep}`, 'crimson');
+  log('Обработка ставки завершена', 'orange');
+  return false;
 };
 
 export default checkCouponLoading;

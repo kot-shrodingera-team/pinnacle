@@ -1,8 +1,5 @@
-let minimumStake = 0;
-
-const getMinimumStake = (): number => minimumStake;
-export const setMinimumStake = (sum: number): void => {
-  minimumStake = sum;
+const getMinimumStake = (): number => {
+  return window.germesInfo.minimumStake;
 };
 
 export default getMinimumStake;

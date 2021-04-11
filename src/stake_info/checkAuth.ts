@@ -1,15 +1,16 @@
-import { getElement } from '@kot-shrodingera-team/config/util';
+import checkAuthGenerator, {
+  authStateReadyGenerator,
+} from '@kot-shrodingera-team/germes-generators/stake_info/checkAuth';
 
-export const authCheckReady = async (timeout = 5000): Promise<void> => {
-  await Promise.race([
-    getElement('.icon-profile', timeout),
-    getElement('input#username', timeout),
-  ]);
-};
+export const authStateReady = authStateReadyGenerator({
+  noAuthElementSelector: 'input#username',
+  authElementSelector: '.icon-profile',
+  // maxDelayAfterNoAuthElementAppeared: 0,
+  logging: true,
+});
 
-const checkAuth = (): boolean => {
-  const profileIcon = document.querySelector('.icon-profile');
-  return Boolean(profileIcon);
-};
+const checkAuth = checkAuthGenerator({
+  authElementSelector: '.icon-profile',
+});
 
 export default checkAuth;
