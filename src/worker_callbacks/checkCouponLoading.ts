@@ -114,6 +114,23 @@ const checkCouponLoading = (): boolean => {
       window.germesInfo.loadingStep = 'beforeUpdateQuote';
       return true;
     }
+    if (
+      window.germesInfo.pendingResponse.status === 500 ||
+      window.germesInfo.pendingResponse.status === '500'
+    ) {
+      if (window.germesInfo.pendingResponse.status === 500) {
+        log('Обработка ставки (int(500))', 'tan');
+      }
+      if (window.germesInfo.pendingResponse.status === '500') {
+        log('Обработка ставки (str(500))', 'tan');
+      }
+      window.germesInfo.pendingDelay = false;
+      setTimeout(() => {
+        window.germesInfo.pendingDelay = true;
+      }, 1000);
+      window.germesInfo.loadingStep = 'pendingDelay';
+      return true;
+    }
     log(
       `Неизвестный статус pending: ${window.germesInfo.pendingResponse.status}`,
       'crimson'
