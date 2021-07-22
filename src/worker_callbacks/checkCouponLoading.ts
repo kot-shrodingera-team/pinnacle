@@ -21,6 +21,10 @@ const checkCouponLoading = (): boolean => {
     }
     if (!('status' in window.germesInfo.straightResponse)) {
       log('Нет статуса в ответе на запрос ставки', 'crimson');
+      worker.Helper.SendInformedMessage(
+        'В Pinnacle произошла ошибка принятия ставки:\nНет статуса в ответе на запрос ставки'
+      );
+      log(JSON.stringify(window.germesInfo.straightResponse));
       log('Обработка ставки завершена', 'orange');
       window.germesInfo.loadingStep = 'beforeUpdateQuote';
       return true;
