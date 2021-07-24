@@ -1,6 +1,26 @@
-import { log } from '@kot-shrodingera-team/germes-utils';
+import { log, timeString } from '@kot-shrodingera-team/germes-utils';
 import { getReactInstance } from '@kot-shrodingera-team/germes-utils/reactUtils';
 import updateQuote from '../show_stake/updateQuote';
+
+const sendTGBotMessage = (
+  token: string,
+  chatId: number,
+  message: string
+): Promise<Response> => {
+  const timestamp = timeString(new Date());
+  const fullMessage =
+    `[${timestamp}]\n` +
+    `[${worker.ApiKey}/Pinnacle]\n` +
+    `${message.replace(/"/g, '\\"')}`;
+  // eslint-disable-next-line no-useless-escape
+  return fetch(`https:\/\/api.telegram.org/bot${token}/sendMessage`, {
+    method: 'post',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: `{"chat_id": "${chatId}","text": "${fullMessage}","disable_notification": false}`,
+  });
+};
 
 const getStoreState = () => {
   const account = document.querySelector('[data-gtm-id="super_nav_account"]');
@@ -19,36 +39,57 @@ const checkCouponLoading = (): boolean => {
       log('Обработка ставки (нет ответа о ставке)', 'tan');
       return true;
     }
-    if (!('status' in window.germesInfo.straightResponse)) {
-      log('Нет статуса в ответе на запрос ставки', 'crimson');
-      worker.Helper.SendInformedMessage(
-        'В Pinnacle произошла ошибка принятия ставки:\nНет статуса в ответе на запрос ставки'
-      );
-      log(JSON.stringify(window.germesInfo.straightResponse));
-      log('Обработка ставки завершена', 'orange');
-      window.germesInfo.loadingStep = 'beforeUpdateQuote';
-      return true;
-    }
-    if (window.germesInfo.straightResponse.status !== 'PENDING_ACCEPTANCE') {
-      if ('title' in window.germesInfo.straightResponse) {
-        log(
-          `Ошибка запроса ставки (${window.germesInfo.straightResponse.title})`,
-          'crimson'
-        );
+    if ('status' in window.germesInfo.straightResponse) {
+      if (window.germesInfo.straightResponse.status !== 'PENDING_ACCEPTANCE') {
+        if ('title' in window.germesInfo.straightResponse) {
+          log(
+            `Ошибка запроса ставки (title: ${window.germesInfo.straightResponse.title})`,
+            'crimson'
+          );
+          log(JSON.stringify(window.germesInfo.straightResponse));
+          sendTGBotMessage(
+            '1786981726:AAE35XkwJRsuReonfh1X2b8E7k9X4vknC_s',
+            126302051,
+            `Ошибка запроса ставки (title: ${window.germesInfo.straightResponse.title})`
+          );
+        } else {
+          log(
+            `Ошибка запроса ставки (status: ${window.germesInfo.straightResponse.status})`,
+            'crimson'
+          );
+          log(JSON.stringify(window.germesInfo.straightResponse));
+          sendTGBotMessage(
+            '1786981726:AAE35XkwJRsuReonfh1X2b8E7k9X4vknC_s',
+            126302051,
+            `Ошибка запроса ставки (status: ${window.germesInfo.straightResponse.status})`
+          );
+        }
         log('Обработка ставки завершена', 'orange');
         window.germesInfo.loadingStep = 'beforeUpdateQuote';
         return true;
       }
-      log(
-        `Ошибка запроса ставки (${window.germesInfo.straightResponse.status})`,
-        'crimson'
-      );
-      log('Обработка ставки завершена', 'orange');
-      window.germesInfo.loadingStep = 'beforeUpdateQuote';
-      return true;
     }
     if (!('requestId' in window.germesInfo.straightResponse)) {
-      log('Нет requestId в ответе на запрос ставки', 'crimson');
+      if (!('status' in window.germesInfo.straightResponse)) {
+        log('Нет статуса и requestId в ответе на запрос ставки', 'crimson');
+        log(JSON.stringify(window.germesInfo.straightResponse));
+        sendTGBotMessage(
+          '1786981726:AAE35XkwJRsuReonfh1X2b8E7k9X4vknC_s',
+          126302051,
+          'Нет статуса и requestId в ответе на запрос ставки'
+        );
+      } else {
+        log(
+          `Нет requestId в ответе на запрос ставки (status: ${window.germesInfo.straightResponse.status})`,
+          'crimson'
+        );
+        log(JSON.stringify(window.germesInfo.straightResponse));
+        sendTGBotMessage(
+          '1786981726:AAE35XkwJRsuReonfh1X2b8E7k9X4vknC_s',
+          126302051,
+          `Нет requestId в ответе на запрос ставки (status: ${window.germesInfo.straightResponse.status})`
+        );
+      }
       log('Обработка ставки завершена', 'orange');
       window.germesInfo.loadingStep = 'beforeUpdateQuote';
       return true;
