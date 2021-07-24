@@ -42,16 +42,25 @@ const checkCouponLoading = (): boolean => {
     if ('status' in window.germesInfo.straightResponse) {
       if (window.germesInfo.straightResponse.status !== 'PENDING_ACCEPTANCE') {
         if ('title' in window.germesInfo.straightResponse) {
-          log(
-            `Ошибка запроса ставки (title: ${window.germesInfo.straightResponse.title})`,
-            'crimson'
-          );
-          log(JSON.stringify(window.germesInfo.straightResponse));
-          sendTGBotMessage(
-            '1786981726:AAE35XkwJRsuReonfh1X2b8E7k9X4vknC_s',
-            126302051,
-            `Ошибка запроса ставки (title: ${window.germesInfo.straightResponse.title})`
-          );
+          const { title } = window.germesInfo.straightResponse;
+          if (/^MARKET_CHANGED$/i.test(title)) {
+            log('Маркет изменился (MARKET_CHANGED)', 'tomato');
+          } else if (/^LINE_CHANGED$/i.test(title)) {
+            log('Линия изменилась (LINE_CHANGED)', 'tomato');
+          } else if (/^OFFLINE$/i.test(title)) {
+            log('Ставка недоступна (OFFLINE)', 'tomato');
+          } else {
+            log(
+              `Ошибка запроса ставки (title: ${window.germesInfo.straightResponse.title})`,
+              'crimson'
+            );
+            log(JSON.stringify(window.germesInfo.straightResponse));
+            sendTGBotMessage(
+              '1786981726:AAE35XkwJRsuReonfh1X2b8E7k9X4vknC_s',
+              126302051,
+              `Ошибка запроса ставки (title: ${window.germesInfo.straightResponse.title})`
+            );
+          }
         } else {
           log(
             `Ошибка запроса ставки (status: ${window.germesInfo.straightResponse.status})`,
