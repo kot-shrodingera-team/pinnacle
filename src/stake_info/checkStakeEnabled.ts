@@ -11,22 +11,22 @@ const preCheck = (): boolean => {
 const checkStakeEnabled = checkStakeEnabledGenerator({
   preCheck,
   getStakeCount,
-  betCheck: {
-    selector: '',
-    errorClasses: [
-      {
-        className: '',
-        message: '',
-      },
-    ],
-  },
-  errorsCheck: [
-    {
-      selector: '',
-      message: '',
-    },
-  ],
-  context: () => document,
+  // betCheck: {
+  //   selector: '',
+  //   errorClasses: [
+  //     {
+  //       className: '',
+  //       message: '',
+  //     },
+  //   ],
+  // },
+  // errorsCheck: [
+  //   {
+  //     selector: '',
+  //     message: '',
+  //   },
+  // ],
+  // context: () => document,
 });
 
 export default checkStakeEnabled;

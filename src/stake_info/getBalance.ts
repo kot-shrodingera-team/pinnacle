@@ -21,7 +21,7 @@ export const refreshBalance = async (): Promise<void> => {
         'X-Device-UUID': state.User.uuid,
         ...(state.User.token ? { 'X-Session': state.User.token } : {}),
       },
-    }
+    },
   ).then((r) => r.json());
   if (!('amount' in balanceResponse)) {
     log('Не удалось определить баланс', 'crimson');
