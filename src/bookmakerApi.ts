@@ -80,6 +80,12 @@ declare global {
 }
 
 export const clearGermesData = (): void => {
+  if (window.germesData && window.germesData.updateMaximumIntervalId) {
+    clearInterval(window.germesData.updateMaximumIntervalId);
+  }
+  if (window.germesData && window.germesData.updateCoefIntervalId) {
+    clearInterval(window.germesData.updateCoefIntervalId);
+  }
   window.germesData = {
     bookmakerName: 'Pinnacle',
     minimumStake: undefined,
@@ -93,6 +99,10 @@ export const clearGermesData = (): void => {
       window.germesData.betProcessingStep = 'error';
       window.germesData.stakeDisabled = true;
     },
+    updateMaximumIntervalId: undefined,
+    updateCoefIntervalId: undefined,
+    manualMax: undefined,
+    manualCoef: undefined,
 
     balance:
       window.germesData && window.germesData.balance

@@ -1,5 +1,7 @@
 import showStakeGenerator from '@kot-shrodingera-team/germes-generators/show_stake';
 import { clearGermesData } from '../bookmakerApi';
+import getCoefficient from '../stake_info/getCoefficient';
+import getMaximumStake from '../stake_info/getMaximumStake';
 import openBet from './openBet';
 import openEvent from './openEvent';
 import preOpenBet from './preOpenBet';
@@ -13,6 +15,8 @@ const showStake = showStakeGenerator({
   preOpenBet,
   openBet,
   setBetAcceptMode,
+  getMaximumStake,
+  getCoefficient,
 });
 
 export default showStake;
