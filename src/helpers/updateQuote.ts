@@ -20,7 +20,7 @@ const updateQuote = async (): Promise<string> => {
         'X-Device-UUID': state.User.uuid,
         ...(state.User.token ? { 'X-Session': state.User.token } : {}),
       },
-    }
+    },
   ).then((r) => r.json());
 
   if (worker.Dev) {
@@ -86,7 +86,7 @@ const updateQuote = async (): Promise<string> => {
     return 'Ошибка обработки запроса на купон (limits is not an array)';
   }
   const maxRiskStake = window.germesData.rawQuote.limits.find(
-    (v) => v.type && v.type === 'maxRiskStake'
+    (v) => v.type && v.type === 'maxRiskStake',
   );
   if (!maxRiskStake) {
     return 'Ошибка обработки запроса на купон (maxRiskStake is not in limits)';
@@ -100,7 +100,7 @@ const updateQuote = async (): Promise<string> => {
   window.germesData.maximumStake = maxRiskStake.amount;
 
   const minRiskStake = window.germesData.rawQuote.limits.find(
-    (v) => v.type && v.type === 'minRiskStake'
+    (v) => v.type && v.type === 'minRiskStake',
   );
   if (!minRiskStake) {
     return 'Ошибка обработки запроса на купон (minRiskStake is not in limits)';

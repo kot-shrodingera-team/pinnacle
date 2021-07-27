@@ -38,7 +38,7 @@ const setStakeSumm = (sum: number): boolean => {
   if (sum > worker.StakeInfo.MaxSumm) {
     log(
       'Ошибка ввода суммы ставки: вводимая сумма больше максимальной ставки',
-      'crimson'
+      'crimson',
     );
     return false;
   }

@@ -8,7 +8,7 @@ const getStoreState = (): PinnacleReactStoreState => {
     return null;
   }
   const accountReactInstance = getReactInstance(
-    account
+    account,
   ) as PinnacleAccountReactInstance;
   if (
     !accountReactInstance ||

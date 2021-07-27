@@ -15,7 +15,7 @@ const fastLoad = async (): Promise<void> => {
   }
   worker.SetSessionData(
     `${window.germesData.bookmakerName}.TransitionToEventPage`,
-    '0'
+    '0',
   );
   log(`Быстрая загрузка (${version})`, 'steelblue');
   showStake();

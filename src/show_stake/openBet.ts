@@ -57,7 +57,7 @@ const openBet = async (): Promise<void> => {
     }
   } else {
     const { score: betIdScore, matchup_id: matchupId } = JSON.parse(
-      worker.BetId
+      worker.BetId,
     );
 
     const scoreRegex = /(\d+):(\d+)$/;
@@ -98,7 +98,7 @@ const openBet = async (): Promise<void> => {
       period || 0,
       window.germesData.selection.designation,
       param,
-      scoreOffset
+      scoreOffset,
     );
     if (!window.germesData.selection.marketKey) {
       throw new JsFailError('Не удалось сформировать marketKey');

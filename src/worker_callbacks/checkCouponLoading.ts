@@ -29,25 +29,25 @@ const checkCouponLoading = (): boolean => {
           } else {
             log(
               `Ошибка запроса ставки (title: ${window.germesData.straightResponse.title})`,
-              'crimson'
+              'crimson',
             );
             log(JSON.stringify(window.germesData.straightResponse));
             sendTGBotMessage(
               '1786981726:AAE35XkwJRsuReonfh1X2b8E7k9X4vknC_s',
               126302051,
-              `Ошибка запроса ставки (title: ${window.germesData.straightResponse.title})`
+              `Ошибка запроса ставки (title: ${window.germesData.straightResponse.title})`,
             );
           }
         } else {
           log(
             `Ошибка запроса ставки (status: ${window.germesData.straightResponse.status})`,
-            'crimson'
+            'crimson',
           );
           log(JSON.stringify(window.germesData.straightResponse));
           sendTGBotMessage(
             '1786981726:AAE35XkwJRsuReonfh1X2b8E7k9X4vknC_s',
             126302051,
-            `Ошибка запроса ставки (status: ${window.germesData.straightResponse.status})`
+            `Ошибка запроса ставки (status: ${window.germesData.straightResponse.status})`,
           );
         }
         log('Обработка ставки завершена', 'orange');
@@ -62,18 +62,18 @@ const checkCouponLoading = (): boolean => {
         sendTGBotMessage(
           '1786981726:AAE35XkwJRsuReonfh1X2b8E7k9X4vknC_s',
           126302051,
-          'Нет статуса и requestId в ответе на запрос ставки'
+          'Нет статуса и requestId в ответе на запрос ставки',
         );
       } else {
         log(
           `Нет requestId в ответе на запрос ставки (status: ${window.germesData.straightResponse.status})`,
-          'crimson'
+          'crimson',
         );
         log(JSON.stringify(window.germesData.straightResponse));
         sendTGBotMessage(
           '1786981726:AAE35XkwJRsuReonfh1X2b8E7k9X4vknC_s',
           126302051,
-          `Нет requestId в ответе на запрос ставки (status: ${window.germesData.straightResponse.status})`
+          `Нет requestId в ответе на запрос ставки (status: ${window.germesData.straightResponse.status})`,
         );
       }
       log('Обработка ставки завершена', 'orange');
@@ -84,7 +84,7 @@ const checkCouponLoading = (): boolean => {
     log(
       `requestId: ${window.germesData.straightResponse.requestId}`,
       'white',
-      true
+      true,
     );
     window.germesData.loadingStep = 'sendPending';
     return true;
@@ -107,7 +107,7 @@ const checkCouponLoading = (): boolean => {
           'X-Device-UUID': state.User.uuid,
           ...(state.User.token ? { 'X-Session': state.User.token } : {}),
         },
-      }
+      },
     )
       .then((r) => r.json())
       .then((r) => {
@@ -164,7 +164,7 @@ const checkCouponLoading = (): boolean => {
     }
     log(
       `Неизвестный статус pending: ${window.germesData.pendingResponse.status}`,
-      'crimson'
+      'crimson',
     );
     log('Обработка ставки завершена', 'orange');
     window.germesData.loadingStep = 'beforeUpdateQuote';

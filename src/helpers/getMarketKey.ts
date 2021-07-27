@@ -5,7 +5,7 @@ const getMarketKey = (
   period: number,
   side: string,
   parameter: number,
-  scoreOffset: number
+  scoreOffset: number,
 ): string => {
   const { market, bet_type: betType, groups } = JSON.parse(worker.ForkObj);
   const pinnacleBetType = getPinnacleBetType();
@@ -44,7 +44,7 @@ const getMarketKey = (
     if (!groups) {
       log(
         'Ошибка формирования getMarketKey при индивидуальном тотале (не найдены groups)',
-        'crimson'
+        'crimson',
       );
       return null;
     }
@@ -52,7 +52,7 @@ const getMarketKey = (
     if (!plr) {
       log(
         'Ошибка формирования getMarketKey при индивидуальном тотале (не найден plr)',
-        'crimson'
+        'crimson',
       );
       return null;
     }
@@ -64,7 +64,7 @@ const getMarketKey = (
     }
     log(
       'Ошибка формирования getMarketKey при индивидуальном тотале (plr не равен P1 или P2)',
-      'crimson'
+      'crimson',
     );
     return null;
   }
@@ -76,7 +76,7 @@ const getMarketKey = (
   }
   log(
     'Ошибка формирования getMarketKey при индивидуальном тотале (market не равен OU1 или OU2)',
-    'crimson'
+    'crimson',
   );
   return null;
 };
