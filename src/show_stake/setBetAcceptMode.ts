@@ -1,5 +1,3 @@
-const setBetAcceptMode = (): boolean => {
-  return true;
-};
+const setBetAcceptMode = async (): Promise<void> => {};
 
 export default setBetAcceptMode;

@@ -1,18 +1,11 @@
-import { log } from '@kot-shrodingera-team/germes-utils';
-import { getReactInstance } from '@kot-shrodingera-team/germes-utils/reactUtils';
-
-const getStoreState = () => {
-  const account = document.querySelector('[data-gtm-id="super_nav_account"]');
-  if (!account) {
-    return null;
-  }
-  return (getReactInstance(
-    account
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ) as any).return.return.return.memoizedProps.value.store.getState();
-};
+import { getWorkerParameter, log } from '@kot-shrodingera-team/germes-utils';
+import getStoreState from '../helpers/getStoreState';
 
 const doStake = (): boolean => {
+  if (getWorkerParameter('fakeDoStake')) {
+    log('[fake] Делаем ставку', 'orange');
+    return true;
+  }
   const state = getStoreState();
   if (!state) {
     log('Ошибка ставки: Не найдены мета данные аккаунта', 'crimson');
@@ -22,11 +15,11 @@ const doStake = (): boolean => {
     oddsFormat: 'decimal',
     acceptBetterPrices: false,
     class: 'Straight',
-    selections: [window.germesInfo.selection],
-    stake: window.germesInfo.placeSum,
+    selections: [window.germesData.selection],
+    stake: window.germesData.placeSum,
     acceptBetterPrice: false,
   };
-  window.germesInfo.straightResponse = null;
+  window.germesData.straightResponse = null;
   fetch('https://api.arcadia.pinnacle.com/0.1/bets/straight', {
     method: 'post',
     body: JSON.stringify(data),
@@ -39,10 +32,10 @@ const doStake = (): boolean => {
   })
     .then((r) => r.json())
     .then((r) => {
-      window.germesInfo.straightResponse = r;
+      window.germesData.straightResponse = r;
     });
 
-  window.germesInfo.loadingStep = 'waitStraight';
+  window.germesData.loadingStep = 'waitStraight';
   return true;
 };
 

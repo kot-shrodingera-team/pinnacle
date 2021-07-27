@@ -8,16 +8,20 @@ import getParameter from '../stake_info/getParameter';
 import getMinimumStake from '../stake_info/getMinimumStake';
 import getMaximumStake from '../stake_info/getMaximumStake';
 import getCurrentSum from '../stake_info/getCurrentSum';
-import showStake, { isCouponOpenning } from '../show_stake';
+// import showStake from '../show_stake';
 
-// const preAction = (): boolean => {
-//   return true;
+// const isReShowStakeNeeded = () => {
+//   return false;
 // };
 
+// const preAction = (): void => {};
+
 const getStakeInfo = getStakeInfoGenerator({
+  // reShowStake: {
+  //   isNeeded: isReShowStakeNeeded,
+  //   showStake,
+  // },
   // preAction,
-  isCouponOpenning,
-  showStake,
   checkAuth,
   getStakeCount,
   getBalance,

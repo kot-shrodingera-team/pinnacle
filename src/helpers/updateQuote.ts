@@ -1,15 +1,4 @@
-import { getReactInstance } from '@kot-shrodingera-team/germes-utils/reactUtils';
-
-const getStoreState = () => {
-  const account = document.querySelector('[data-gtm-id="super_nav_account"]');
-  if (!account) {
-    return null;
-  }
-  return (getReactInstance(
-    account
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ) as any).return.return.return.memoizedProps.value.store.getState();
-};
+import getStoreState from './getStoreState';
 
 const updateQuote = async (): Promise<string> => {
   const state = getStoreState();
@@ -17,13 +6,13 @@ const updateQuote = async (): Promise<string> => {
     return 'Не найдены мета данные аккаунта';
   }
 
-  window.germesInfo.rawQuote = await fetch(
+  window.germesData.rawQuote = await fetch(
     'https://api.arcadia.pinnacle.com/0.1/bets/straight/quote',
     {
       method: 'post',
       body: JSON.stringify({
         oddsFormat: 'decimal',
-        selections: [window.germesInfo.selection],
+        selections: [window.germesData.selection],
       }),
       headers: {
         'Content-Type': 'application/json',
@@ -36,22 +25,22 @@ const updateQuote = async (): Promise<string> => {
 
   if (worker.Dev) {
     // eslint-disable-next-line no-console
-    console.log(JSON.stringify(window.germesInfo.rawQuote, null, 2));
+    console.log(JSON.stringify(window.germesData.rawQuote, null, 2));
   }
 
   if (
-    'status' in window.germesInfo.rawQuote &&
-    window.germesInfo.rawQuote.status !== 200
+    'status' in window.germesData.rawQuote &&
+    window.germesData.rawQuote.status !== 200
   ) {
-    if (window.germesInfo.rawQuote.status === 401) {
+    if (window.germesData.rawQuote.status === 401) {
       worker.Islogin = false;
       worker.JSLogined();
       return 'Ошибка открытия ставки (нет авторизации)';
     }
-    if ('title' in window.germesInfo.rawQuote) {
-      return `Ошибка открытия ставки (${window.germesInfo.rawQuote.title})`;
+    if ('title' in window.germesData.rawQuote) {
+      return `Ошибка открытия ставки (${window.germesData.rawQuote.title})`;
     }
-    return `Ошибка открытия ставки (${window.germesInfo.rawQuote.status})`;
+    return `Ошибка открытия ставки (${window.germesData.rawQuote.status})`;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -90,13 +79,13 @@ const updateQuote = async (): Promise<string> => {
   //   ],
   // };
 
-  if (!('limits' in window.germesInfo.rawQuote)) {
+  if (!('limits' in window.germesData.rawQuote)) {
     return 'Ошибка обработки запроса на купон (limits is not in quote)';
   }
-  if (!Array.isArray(window.germesInfo.rawQuote.limits)) {
+  if (!Array.isArray(window.germesData.rawQuote.limits)) {
     return 'Ошибка обработки запроса на купон (limits is not an array)';
   }
-  const maxRiskStake = window.germesInfo.rawQuote.limits.find(
+  const maxRiskStake = window.germesData.rawQuote.limits.find(
     (v) => v.type && v.type === 'maxRiskStake'
   );
   if (!maxRiskStake) {
@@ -108,9 +97,9 @@ const updateQuote = async (): Promise<string> => {
   if (typeof maxRiskStake.amount !== 'number') {
     return 'Ошибка обработки запроса на купон (maxRiskStake.amount is not a number)';
   }
-  window.germesInfo.maximumStake = maxRiskStake.amount;
+  window.germesData.maximumStake = maxRiskStake.amount;
 
-  const minRiskStake = window.germesInfo.rawQuote.limits.find(
+  const minRiskStake = window.germesData.rawQuote.limits.find(
     (v) => v.type && v.type === 'minRiskStake'
   );
   if (!minRiskStake) {
@@ -122,26 +111,26 @@ const updateQuote = async (): Promise<string> => {
   if (typeof minRiskStake.amount !== 'number') {
     return 'Ошибка обработки запроса на купон (minRiskStake.amount is not a number)';
   }
-  window.germesInfo.minimumStake = minRiskStake.amount;
+  window.germesData.minimumStake = minRiskStake.amount;
 
-  if (!('selections' in window.germesInfo.rawQuote)) {
+  if (!('selections' in window.germesData.rawQuote)) {
     return 'Ошибка обработки запроса на купон (selections is not in quote)';
   }
-  if (!Array.isArray(window.germesInfo.rawQuote.selections)) {
+  if (!Array.isArray(window.germesData.rawQuote.selections)) {
     return 'Ошибка обработки запроса на купон (selections is not an array)';
   }
-  if (window.germesInfo.rawQuote.selections.length !== 1) {
+  if (window.germesData.rawQuote.selections.length !== 1) {
     return 'Ошибка обработки запроса на купон (selections.length !== 1)';
   }
-  if (!('price' in window.germesInfo.rawQuote.selections[0])) {
+  if (!('price' in window.germesData.rawQuote.selections[0])) {
     return 'Ошибка обработки запроса на купон (price is not in selections[0])';
   }
-  if (typeof window.germesInfo.rawQuote.selections[0].price !== 'number') {
+  if (typeof window.germesData.rawQuote.selections[0].price !== 'number') {
     return 'Ошибка обработки запроса на купон (price is not a number)';
   }
-  window.germesInfo.selection.price =
-    window.germesInfo.rawQuote.selections[0].price;
-  window.germesInfo.price = window.germesInfo.rawQuote.selections[0].price;
+  window.germesData.selection.price =
+    window.germesData.rawQuote.selections[0].price;
+  window.germesData.price = window.germesData.rawQuote.selections[0].price;
   return 'success';
 };
 

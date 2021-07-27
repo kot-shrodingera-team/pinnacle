@@ -3,22 +3,22 @@ import { version } from '../package.json';
 import showStake from './show_stake';
 
 const fastLoad = async (): Promise<void> => {
+  if (
+    worker.GetSessionData(`${window.germesData.bookmakerName}.ShowStake`) ===
+    '1'
+  ) {
+    log('Предыдущее переоткрытие купона незавершено', 'red');
+    worker.SetSessionData(`${window.germesData.bookmakerName}.ShowStake`, '0');
+    worker.JSFail();
+    window.location.reload();
+    return;
+  }
+  worker.SetSessionData(
+    `${window.germesData.bookmakerName}.TransitionToEventPage`,
+    '0'
+  );
   log(`Быстрая загрузка (${version})`, 'steelblue');
-  window.germesInfo = {
-    selection: null,
-    rawQuote: null,
-    maximumStake: 0,
-    minimumStake: 0,
-    price: 0,
-    placeSum: 0,
-    loadingStep: null,
-    straightResponse: null,
-    pendingResponse: null,
-    requestId: null,
-    pendingDelay: null,
-    betPlaced: null,
-  };
-  await showStake();
+  showStake();
 };
 
 export default fastLoad;

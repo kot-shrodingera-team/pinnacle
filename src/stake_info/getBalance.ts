@@ -1,21 +1,9 @@
-// import {
-//   balanceReadyGenerator,
-//   getBalanceGenerator,
-// } from '@kot-shrodingera-team/germes-generators/stake_info/getBalance';
-
+import getStakeInfoValueGenerator, {
+  stakeInfoValueReadyGenerator,
+} from '@kot-shrodingera-team/germes-generators/stake_info/getStakeInfoValue';
+import { StakeInfoValueOptions } from '@kot-shrodingera-team/germes-generators/stake_info/types';
 import { log } from '@kot-shrodingera-team/germes-utils';
-import { getReactInstance } from '@kot-shrodingera-team/germes-utils/reactUtils';
-
-const getStoreState = () => {
-  const account = document.querySelector('[data-gtm-id="super_nav_account"]');
-  if (!account) {
-    return null;
-  }
-  return (getReactInstance(
-    account
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ) as any).return.return.return.memoizedProps.value.store.getState();
-};
+import getStoreState from '../helpers/getStoreState';
 
 export const refreshBalance = async (): Promise<void> => {
   const state = getStoreState();
@@ -43,37 +31,36 @@ export const refreshBalance = async (): Promise<void> => {
   worker.JSBalanceChange(worker.StakeInfo.Balance);
 };
 
-const getBalance = (): number => {
-  return worker.StakeInfo.Balance;
+// export const balanceSelector = '';
+
+const balanceOptions: StakeInfoValueOptions = {
+  name: 'balance',
+  fixedValue: () => worker.StakeInfo.Balance,
+  // valueFromText: {
+  //   text: {
+  //     // getText: () => '',
+  //     selector: balanceSelector,
+  //     context: () => document,
+  //   },
+  //   replaceDataArray: [
+  //     {
+  //       searchValue: '',
+  //       replaceValue: '',
+  //     },
+  //   ],
+  //   removeRegex: /[\s,']/g,
+  //   matchRegex: /(\d+(?:\.\d+)?)/,
+  //   errorValue: 0,
+  // },
+  // zeroValues: [],
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // modifyValue: (value: number, extractType: string) => value,
+  // disableLog: false,
 };
 
-export const balanceReady = async (): Promise<boolean> => {
-  return true;
-};
+const getBalance = getStakeInfoValueGenerator(balanceOptions);
 
-// export const balanceReady = balanceReadyGenerator({
-//   balanceSelector: '[data-test-id="QuickCashier-BankRoll"]',
-//   // balanceRegex: /(\d+(?:\.\d+)?)/,
-//   // replaceDataArray: [
-//   //   {
-//   //     searchValue: '',
-//   //     replaceValue: '',
-//   //   },
-//   // ],
-//   // removeRegex: /[\s,']/g,
-// });
-
-// const getBalance = getBalanceGenerator({
-//   balanceSelector: '[data-test-id="QuickCashier-BankRoll"]',
-//   // balanceRegex: /(\d+(?:\.\d+)?)/,
-//   // replaceDataArray: [
-//   //   {
-//   //     searchValue: '',
-//   //     replaceValue: '',
-//   //   },
-//   // ],
-//   // removeRegex: /[\s,']/g,
-// });
+export const balanceReady = stakeInfoValueReadyGenerator(balanceOptions);
 
 export const updateBalance = (): void => {
   worker.JSBalanceChange(getBalance());

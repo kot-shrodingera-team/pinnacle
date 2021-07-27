@@ -1,8 +1,12 @@
-import { log } from '@kot-shrodingera-team/germes-utils';
+import { getWorkerParameter, log } from '@kot-shrodingera-team/germes-utils';
 import { refreshBalance } from '../stake_info/getBalance';
 
 const checkStakeStatus = (): boolean => {
-  if (!window.germesInfo.betPlaced) {
+  if (getWorkerParameter('fakeDoStake')) {
+    log('[fake] Ставка принята', 'green');
+    return true;
+  }
+  if (!window.germesData.betPlaced) {
     log('Ставка не принята', 'red');
     return false;
   }
