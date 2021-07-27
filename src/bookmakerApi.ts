@@ -94,7 +94,10 @@ export const clearGermesData = (): void => {
       window.germesData.stakeDisabled = true;
     },
 
-    balance: null,
+    balance:
+      window.germesData && window.germesData.balance
+        ? window.germesData.balance
+        : -1,
     selection: null,
     rawQuote: null,
     price: 0,

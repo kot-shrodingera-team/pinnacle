@@ -4,7 +4,11 @@ import {
   JsFailError,
 } from '@kot-shrodingera-team/germes-utils/errors';
 import checkAuth, { authStateReady } from '../stake_info/checkAuth';
-import { balanceReady, updateBalance } from '../stake_info/getBalance';
+import {
+  balanceReady,
+  refreshBalance,
+  updateBalance,
+} from '../stake_info/getBalance';
 
 const preOpenEvent = async (): Promise<void> => {
   if (!checkBookerHost()) {
@@ -21,6 +25,7 @@ const preOpenEvent = async (): Promise<void> => {
   }
   log('Есть авторизация', 'steelblue');
   await balanceReady();
+  await refreshBalance();
   updateBalance();
 };
 

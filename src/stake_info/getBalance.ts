@@ -27,8 +27,7 @@ export const refreshBalance = async (): Promise<void> => {
     log('Не удалось определить баланс', 'crimson');
     return;
   }
-  worker.StakeInfo.Balance = window.germesData.balance;
-  worker.JSBalanceChange(window.germesData.balance);
+  window.germesData.balance = balanceResponse.amount;
 };
 
 // export const balanceSelector = '';
@@ -63,6 +62,7 @@ const getBalance = getStakeInfoValueGenerator(balanceOptions);
 export const balanceReady = stakeInfoValueReadyGenerator(balanceOptions);
 
 export const updateBalance = (): void => {
+  worker.StakeInfo.Balance = getBalance();
   worker.JSBalanceChange(getBalance());
 };
 
