@@ -50,7 +50,7 @@ declare global {
       {
         amount: number;
         type: 'maxWinStake';
-      }
+      },
     ];
     selections: [
       {
@@ -58,11 +58,12 @@ declare global {
         marketKey: string;
         matchupId: number;
         price: number;
-      }
+      },
     ];
   }
 
   interface GermesData {
+    balance: number;
     selection: PinnacleSelection;
     rawQuote: PinnacleQuote;
     price: number;
@@ -93,6 +94,7 @@ export const clearGermesData = (): void => {
       window.germesData.stakeDisabled = true;
     },
 
+    balance: null,
     selection: null,
     rawQuote: null,
     price: 0,

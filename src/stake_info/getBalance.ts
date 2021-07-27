@@ -27,15 +27,15 @@ export const refreshBalance = async (): Promise<void> => {
     log('Не удалось определить баланс', 'crimson');
     return;
   }
-  worker.StakeInfo.Balance = balanceResponse.amount;
-  worker.JSBalanceChange(worker.StakeInfo.Balance);
+  worker.StakeInfo.Balance = window.germesData.balance;
+  worker.JSBalanceChange(window.germesData.balance);
 };
 
 // export const balanceSelector = '';
 
 const balanceOptions: StakeInfoValueOptions = {
   name: 'balance',
-  fixedValue: () => worker.StakeInfo.Balance,
+  fixedValue: () => window.germesData.balance,
   // valueFromText: {
   //   text: {
   //     // getText: () => '',
