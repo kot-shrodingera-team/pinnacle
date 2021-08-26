@@ -100,6 +100,7 @@ const asyncCheck = async () => {
             machine.promises = {
               updateQuote: sleep(0),
             };
+            return;
           }
         }
         if (!('requestId' in window.germesData.straightResponse)) {
@@ -125,6 +126,7 @@ const asyncCheck = async () => {
           machine.promises = {
             updateQuote: sleep(0),
           };
+          return;
         }
         window.germesData.requestId =
           window.germesData.straightResponse.requestId;
