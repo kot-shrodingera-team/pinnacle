@@ -1,8 +1,13 @@
-import { checkBookerHost, log } from '@kot-shrodingera-team/germes-utils';
+import {
+  checkBookerHost,
+  checkCurrency,
+  log,
+} from '@kot-shrodingera-team/germes-utils';
 import {
   NewUrlError,
   JsFailError,
 } from '@kot-shrodingera-team/germes-utils/errors';
+import getSiteCurrency from '../helpers/getSiteCurrency';
 import checkAuth, { authStateReady } from '../stake_info/checkAuth';
 import {
   balanceReady,
@@ -27,6 +32,9 @@ const preOpenEvent = async (): Promise<void> => {
   await balanceReady();
   await refreshBalance();
   updateBalance();
+
+  const siteCurrency = getSiteCurrency();
+  checkCurrency(siteCurrency);
 };
 
 export default preOpenEvent;

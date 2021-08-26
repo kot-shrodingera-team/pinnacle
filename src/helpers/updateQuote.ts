@@ -6,8 +6,9 @@ const updateQuote = async (): Promise<string> => {
     return 'Не найдены мета данные аккаунта';
   }
 
+  const hostname = window.location.hostname.replace(/^www\./, '');
   window.germesData.rawQuote = await fetch(
-    'https://api.arcadia.pinnacle.com/0.1/bets/straight/quote',
+    `https://api.arcadia.${hostname}/0.1/bets/straight/quote`,
     {
       method: 'post',
       body: JSON.stringify({
@@ -38,9 +39,9 @@ const updateQuote = async (): Promise<string> => {
       return 'Ошибка открытия ставки (нет авторизации)';
     }
     if ('title' in window.germesData.rawQuote) {
-      return `Ошибка открытия ставки (${window.germesData.rawQuote.title})`;
+      return `Ошибка открытия ставки (title: ${window.germesData.rawQuote.title})`;
     }
-    return `Ошибка открытия ставки (${window.germesData.rawQuote.status})`;
+    return `Ошибка открытия ставки (status: ${window.germesData.rawQuote.status})`;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

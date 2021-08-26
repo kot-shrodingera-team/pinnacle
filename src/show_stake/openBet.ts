@@ -1,3 +1,4 @@
+import { log } from '@kot-shrodingera-team/germes-utils';
 import { JsFailError } from '@kot-shrodingera-team/germes-utils/errors';
 import getMarketKey from '../helpers/getMarketKey';
 import updateQuote from '../helpers/updateQuote';
@@ -113,6 +114,19 @@ const openBet = async (): Promise<void> => {
   if (result !== 'success') {
     throw new JsFailError(result);
   }
+
+  /* ======================================================================== */
+  /*                     Запуск обновления данных о ставке                    */
+  /* ======================================================================== */
+
+  window.germesData.updateQuoteIntervalId = setInterval(async () => {
+    if (!window.germesData.stopUpdateQuote) {
+      const tResult = await updateQuote();
+      if (tResult !== 'success') {
+        log(tResult, 'crimson');
+      }
+    }
+  }, 500);
 };
 
 export default openBet;

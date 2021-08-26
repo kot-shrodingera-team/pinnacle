@@ -5,31 +5,6 @@ import { StakeInfoValueOptions } from '@kot-shrodingera-team/germes-generators/s
 import { log } from '@kot-shrodingera-team/germes-utils';
 import getStoreState from '../helpers/getStoreState';
 
-export const refreshBalance = async (): Promise<void> => {
-  const state = getStoreState();
-  if (!state) {
-    log('Не найдены мета данные аккаунта', 'crimson');
-    return;
-  }
-  const balanceResponse = await fetch(
-    'https://api.arcadia.pinnacle.com/0.1/wallet/balance',
-    {
-      method: 'get',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': 'CmX2KcMrXuFmNg6YFbmTxE0y9CIrOi0R',
-        'X-Device-UUID': state.User.uuid,
-        ...(state.User.token ? { 'X-Session': state.User.token } : {}),
-      },
-    },
-  ).then((r) => r.json());
-  if (!('amount' in balanceResponse)) {
-    log('Не удалось определить баланс', 'crimson');
-    return;
-  }
-  window.germesData.balance = balanceResponse.amount;
-};
-
 // export const balanceSelector = '';
 
 const balanceOptions: StakeInfoValueOptions = {
@@ -64,6 +39,34 @@ export const balanceReady = stakeInfoValueReadyGenerator(balanceOptions);
 export const updateBalance = (): void => {
   worker.StakeInfo.Balance = getBalance();
   worker.JSBalanceChange(getBalance());
+};
+
+export const refreshBalance = async (): Promise<void> => {
+  const state = getStoreState();
+  if (!state) {
+    log('Не найдены мета данные аккаунта', 'crimson');
+    return;
+  }
+  const hostname = window.location.hostname.replace(/^www\./, '');
+  const balanceResponse = await fetch(
+    `https://api.arcadia.${hostname}/0.1/wallet/balance`,
+    {
+      method: 'get',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': 'CmX2KcMrXuFmNg6YFbmTxE0y9CIrOi0R',
+        'X-Device-UUID': state.User.uuid,
+        ...(state.User.token ? { 'X-Session': state.User.token } : {}),
+      },
+    },
+  ).then((r) => r.json());
+  if (!('amount' in balanceResponse)) {
+    log('Не удалось определить баланс', 'crimson');
+    return;
+  }
+  window.germesData.balance = balanceResponse.amount;
+  window.germesData.currency = balanceResponse.currency;
+  updateBalance();
 };
 
 export default getBalance;

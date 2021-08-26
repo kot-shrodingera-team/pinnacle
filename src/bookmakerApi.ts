@@ -64,27 +64,27 @@ declare global {
 
   interface GermesData {
     balance: number;
+    currency: string;
     selection: PinnacleSelection;
     rawQuote: PinnacleQuote;
     price: number;
     placeSum: number;
-    loadingStep: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     straightResponse: any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     pendingResponse: any;
     requestId: string;
-    pendingDelay: boolean;
-    betPlaced: boolean;
+    updateQuoteIntervalId: number;
+    stopUpdateQuote: boolean;
   }
 }
 
 export const clearGermesData = (): void => {
-  if (window.germesData && window.germesData.updateMaximumIntervalId) {
-    clearInterval(window.germesData.updateMaximumIntervalId);
+  if (window.germesData && window.germesData.updateManualDataIntervalId) {
+    clearInterval(window.germesData.updateManualDataIntervalId);
   }
-  if (window.germesData && window.germesData.updateCoefIntervalId) {
-    clearInterval(window.germesData.updateCoefIntervalId);
+  if (window.germesData && window.germesData.updateQuoteIntervalId) {
+    clearInterval(window.germesData.updateQuoteIntervalId);
   }
   window.germesData = {
     bookmakerName: 'Pinnacle',
@@ -99,25 +99,30 @@ export const clearGermesData = (): void => {
       window.germesData.betProcessingStep = 'error';
       window.germesData.stakeDisabled = true;
     },
-    updateMaximumIntervalId: undefined,
-    updateCoefIntervalId: undefined,
-    manualMax: undefined,
-    manualCoef: undefined,
+    updateManualDataIntervalId: undefined,
+    stopUpdateManualData: undefined,
+    manualMaximumStake: undefined,
+    manualCoefficient: undefined,
+    manualParameter: undefined,
+    manualStakeEnabled: undefined,
 
     balance:
       window.germesData && window.germesData.balance
         ? window.germesData.balance
         : -1,
-    selection: null,
-    rawQuote: null,
-    price: 0,
-    placeSum: 0,
-    loadingStep: null,
-    straightResponse: null,
-    pendingResponse: null,
-    requestId: null,
-    pendingDelay: null,
-    betPlaced: null,
+    currency:
+      window.germesData && window.germesData.currency
+        ? window.germesData.currency
+        : undefined,
+    selection: undefined,
+    rawQuote: undefined,
+    price: undefined,
+    placeSum: undefined,
+    straightResponse: undefined,
+    pendingResponse: undefined,
+    requestId: undefined,
+    updateQuoteIntervalId: undefined,
+    stopUpdateQuote: undefined,
   };
 };
 

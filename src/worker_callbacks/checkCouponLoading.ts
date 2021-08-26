@@ -1,212 +1,266 @@
+import checkCouponLoadingGenerator from '@kot-shrodingera-team/germes-generators/worker_callbacks/checkCouponLoading';
 import {
-  getWorkerParameter,
+  awaiter,
+  checkCouponLoadingError,
+  checkCouponLoadingSuccess,
+  getRemainingTimeout,
   log,
   sendTGBotMessage,
+  sleep,
 } from '@kot-shrodingera-team/germes-utils';
+import { StateMachine } from '@kot-shrodingera-team/germes-utils/stateMachine';
 import getStoreState from '../helpers/getStoreState';
 import updateQuote from '../helpers/updateQuote';
 
-const checkCouponLoading = (): boolean => {
-  if (getWorkerParameter('fakeDoStake')) {
-    log('[fake] Обработка ставки завершена', 'orange');
-    return false;
-  }
-  if (window.germesData.loadingStep === 'waitStraight') {
-    if (!window.germesData.straightResponse) {
-      log('Обработка ставки (нет ответа о ставке)', 'tan');
-      return true;
-    }
-    if ('status' in window.germesData.straightResponse) {
-      if (window.germesData.straightResponse.status !== 'PENDING_ACCEPTANCE') {
-        if ('title' in window.germesData.straightResponse) {
-          const { title } = window.germesData.straightResponse;
-          if (/^MARKET_CHANGED$/i.test(title)) {
-            log('Маркет изменился (MARKET_CHANGED)', 'tomato');
-          } else if (/^LINE_CHANGED$/i.test(title)) {
-            log('Линия изменилась (LINE_CHANGED)', 'tomato');
-          } else if (/^OFFLINE$/i.test(title)) {
-            log('Ставка недоступна (OFFLINE)', 'tomato');
-          } else {
-            log(
-              `Ошибка запроса ставки (title: ${window.germesData.straightResponse.title})`,
-              'crimson',
-            );
+const asyncCheck = async () => {
+  const machine = new StateMachine();
+
+  machine.promises = {
+    gotStraightResponse: awaiter(
+      () => window.germesData.straightResponse,
+      getRemainingTimeout(),
+    ),
+  };
+
+  machine.setStates({
+    start: {
+      entry: async () => {
+        log('Начало обработки ставки', 'steelblue');
+        const state = getStoreState();
+        if (!state) {
+          checkCouponLoadingError({
+            botMessage: 'Ошибка ставки: Не найдены мета данные аккаунта',
+          });
+          return;
+        }
+        const data = {
+          oddsFormat: 'decimal',
+          acceptBetterPrices: false,
+          class: 'Straight',
+          selections: [window.germesData.selection],
+          stake: window.germesData.placeSum,
+          acceptBetterPrice: false,
+        };
+        window.germesData.straightResponse = null;
+        const hostname = window.location.hostname.replace(/^www\./, '');
+        fetch(`https://api.arcadia.${hostname}/0.1/bets/straight`, {
+          method: 'post',
+          body: JSON.stringify(data),
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': 'CmX2KcMrXuFmNg6YFbmTxE0y9CIrOi0R',
+            'X-Device-UUID': state.User.uuid,
+            ...(state.User.token ? { 'X-Session': state.User.token } : {}),
+          },
+        })
+          .then((r) => r.json())
+          .then((r) => {
+            window.germesData.straightResponse = r;
+          });
+        window.germesData.betProcessingAdditionalInfo =
+          'ожидание ответа о ставке';
+      },
+    },
+    gotStraightResponse: {
+      entry: async () => {
+        log('Получили ответ о запросе ставки', 'steelblue');
+        window.germesData.betProcessingAdditionalInfo = undefined;
+        if ('status' in window.germesData.straightResponse) {
+          if (
+            window.germesData.straightResponse.status !== 'PENDING_ACCEPTANCE'
+          ) {
+            if ('title' in window.germesData.straightResponse) {
+              const { title } = window.germesData.straightResponse;
+              if (/^MARKET_CHANGED$/i.test(title)) {
+                log('Маркет изменился (MARKET_CHANGED)', 'tomato');
+              } else if (/^LINE_CHANGED$/i.test(title)) {
+                log('Линия изменилась (LINE_CHANGED)', 'tomato');
+              } else if (/^OFFLINE$/i.test(title)) {
+                log('Ставка недоступна (OFFLINE)', 'tomato');
+              } else {
+                const msg = `Ошибка запроса ставки (title: ${window.germesData.straightResponse.title})`;
+                log(msg, 'crimson');
+                log(JSON.stringify(window.germesData.straightResponse));
+                sendTGBotMessage(
+                  '1786981726:AAE35XkwJRsuReonfh1X2b8E7k9X4vknC_s',
+                  126302051,
+                  msg,
+                );
+              }
+            } else {
+              const msg = `Ошибка запроса ставки (status: ${window.germesData.straightResponse.status})`;
+              log(msg, 'crimson');
+              log(JSON.stringify(window.germesData.straightResponse));
+              sendTGBotMessage(
+                '1786981726:AAE35XkwJRsuReonfh1X2b8E7k9X4vknC_s',
+                126302051,
+                msg,
+              );
+            }
+            machine.promises = {
+              updateQuote: sleep(0),
+            };
+          }
+        }
+        if (!('requestId' in window.germesData.straightResponse)) {
+          if (!('status' in window.germesData.straightResponse)) {
+            const msg = 'Нет статуса и requestId в ответе на запрос ставки';
+            log(msg, 'crimson');
             log(JSON.stringify(window.germesData.straightResponse));
             sendTGBotMessage(
               '1786981726:AAE35XkwJRsuReonfh1X2b8E7k9X4vknC_s',
               126302051,
-              `Ошибка запроса ставки (title: ${window.germesData.straightResponse.title})`,
+              msg,
+            );
+          } else {
+            const msg = `Нет requestId в ответе на запрос ставки (status: ${window.germesData.straightResponse.status})`;
+            log(msg, 'crimson');
+            log(JSON.stringify(window.germesData.straightResponse));
+            sendTGBotMessage(
+              '1786981726:AAE35XkwJRsuReonfh1X2b8E7k9X4vknC_s',
+              126302051,
+              msg,
             );
           }
-        } else {
-          log(
-            `Ошибка запроса ставки (status: ${window.germesData.straightResponse.status})`,
-            'crimson',
-          );
-          log(JSON.stringify(window.germesData.straightResponse));
-          sendTGBotMessage(
-            '1786981726:AAE35XkwJRsuReonfh1X2b8E7k9X4vknC_s',
-            126302051,
-            `Ошибка запроса ставки (status: ${window.germesData.straightResponse.status})`,
-          );
+          machine.promises = {
+            updateQuote: sleep(0),
+          };
         }
-        log('Обработка ставки завершена', 'orange');
-        window.germesData.loadingStep = 'beforeUpdateQuote';
-        return true;
-      }
-    }
-    if (!('requestId' in window.germesData.straightResponse)) {
-      if (!('status' in window.germesData.straightResponse)) {
-        log('Нет статуса и requestId в ответе на запрос ставки', 'crimson');
-        log(JSON.stringify(window.germesData.straightResponse));
-        sendTGBotMessage(
-          '1786981726:AAE35XkwJRsuReonfh1X2b8E7k9X4vknC_s',
-          126302051,
-          'Нет статуса и requestId в ответе на запрос ставки',
-        );
-      } else {
+        window.germesData.requestId =
+          window.germesData.straightResponse.requestId;
         log(
-          `Нет requestId в ответе на запрос ставки (status: ${window.germesData.straightResponse.status})`,
+          `requestId: ${window.germesData.straightResponse.requestId}`,
+          'white',
+          true,
+        );
+        machine.promises = {
+          sendPending: sleep(0),
+        };
+      },
+    },
+    updateQuote: {
+      entry: async () => {
+        log('Обновляем данные о ставке', 'tan');
+        window.germesData.betProcessingAdditionalInfo =
+          'обновление данных о ставке';
+        const updateResult = await updateQuote();
+        window.germesData.betProcessingAdditionalInfo = undefined;
+        if (updateResult !== 'success') {
+          log('Ошибка обновления данных о ставке', 'crimson');
+          // window.germesData.stakeDisabled = true;
+        } else {
+          log('Обновили данные о ставке', 'orange');
+        }
+        machine.end = true;
+        checkCouponLoadingError({});
+      },
+    },
+    sendPending: {
+      entry: async () => {
+        const state = getStoreState();
+        if (!state) {
+          checkCouponLoadingError({
+            botMessage: 'Ошибка ставки: Не найдены мета данные аккаунта',
+          });
+          return;
+        }
+        window.germesData.pendingResponse = null;
+        const hostname = window.location.hostname.replace(/^www\./, '');
+        fetch(
+          // eslint-disable-next-line prefer-template
+          `https://api.arcadia.${hostname}/0.1/bets/pending/` +
+            window.germesData.requestId,
+          {
+            method: 'get',
+            headers: {
+              'X-API-Key': 'CmX2KcMrXuFmNg6YFbmTxE0y9CIrOi0R',
+              'X-Device-UUID': state.User.uuid,
+              ...(state.User.token ? { 'X-Session': state.User.token } : {}),
+            },
+          },
+        )
+          .then((r) => r.json())
+          .then((r) => {
+            window.germesData.pendingResponse = r;
+          });
+        machine.promises = {
+          gotPending: awaiter(
+            () => window.germesData.pendingResponse,
+            getRemainingTimeout(),
+          ),
+        };
+        window.germesData.betProcessingAdditionalInfo = 'ожидание pending';
+      },
+    },
+    gotPending: {
+      entry: async () => {
+        window.germesData.betProcessingAdditionalInfo = undefined;
+        if (!('status' in window.germesData.pendingResponse)) {
+          log('Нет статуса в ответе на запрос pending', 'crimson');
+          checkCouponLoadingError({});
+          return;
+        }
+        if (window.germesData.pendingResponse.status === 'pending') {
+          log('Обработка ставки (pending)', 'tan');
+          machine.promises = {
+            sendPending: sleep(1000),
+          };
+          return;
+        }
+        if (window.germesData.pendingResponse.status === 'unsettled') {
+          window.germesData.betProcessingAdditionalInfo = 'unsettled';
+          checkCouponLoadingSuccess();
+          machine.end = true;
+          return;
+        }
+        if (window.germesData.pendingResponse.status === 'rejected') {
+          log('Ставка отклонена (rejected)', 'orange');
+          machine.promises = {
+            updateQuote: sleep(0),
+          };
+          return;
+        }
+        if (
+          window.germesData.pendingResponse.status === 500 ||
+          window.germesData.pendingResponse.status === '500'
+        ) {
+          if (window.germesData.pendingResponse.status === 500) {
+            log('Обработка ставки (int(500))', 'tan');
+          }
+          if (window.germesData.pendingResponse.status === '500') {
+            log('Обработка ставки (str(500))', 'tan');
+          }
+          machine.promises = {
+            sendPending: sleep(1000),
+          };
+          return;
+        }
+        log(
+          `Неизвестный статус pending: ${window.germesData.pendingResponse.status}`,
           'crimson',
         );
-        log(JSON.stringify(window.germesData.straightResponse));
-        sendTGBotMessage(
-          '1786981726:AAE35XkwJRsuReonfh1X2b8E7k9X4vknC_s',
-          126302051,
-          `Нет requestId в ответе на запрос ставки (status: ${window.germesData.straightResponse.status})`,
-        );
-      }
-      log('Обработка ставки завершена', 'orange');
-      window.germesData.loadingStep = 'beforeUpdateQuote';
-      return true;
-    }
-    window.germesData.requestId = window.germesData.straightResponse.requestId;
-    log(
-      `requestId: ${window.germesData.straightResponse.requestId}`,
-      'white',
-      true,
-    );
-    window.germesData.loadingStep = 'sendPending';
-    return true;
-  }
-  if (window.germesData.loadingStep === 'sendPending') {
-    const state = getStoreState();
-    if (!state) {
-      log('Ошибка ставки: Не найдены мета данные аккаунта', 'crimson');
-      return false;
-    }
-    window.germesData.pendingResponse = null;
-    fetch(
-      // eslint-disable-next-line prefer-template
-      'https://api.arcadia.pinnacle.com/0.1/bets/pending/' +
-        window.germesData.requestId,
-      {
-        method: 'get',
-        headers: {
-          'X-API-Key': 'CmX2KcMrXuFmNg6YFbmTxE0y9CIrOi0R',
-          'X-Device-UUID': state.User.uuid,
-          ...(state.User.token ? { 'X-Session': state.User.token } : {}),
-        },
+        machine.promises = {
+          updateQuote: sleep(0),
+        };
       },
-    )
-      .then((r) => r.json())
-      .then((r) => {
-        window.germesData.pendingResponse = r;
-      });
-    window.germesData.loadingStep = 'pending';
-    return true;
-  }
-  if (window.germesData.loadingStep === 'pending') {
-    if (!window.germesData.pendingResponse) {
-      log('Обработка ставки (ожидание pending)', 'tan');
-      return true;
-    }
-    if (!('status' in window.germesData.pendingResponse)) {
-      log('Нет статуса в ответе на запрос pending', 'crimson');
-      log('Обработка ставки завершена', 'orange');
-      return false;
-    }
-    if (window.germesData.pendingResponse.status === 'pending') {
-      log('Обработка ставки (pending)', 'tan');
-      window.germesData.pendingDelay = false;
-      setTimeout(() => {
-        window.germesData.pendingDelay = true;
-      }, 1000);
-      window.germesData.loadingStep = 'pendingDelay';
-      return true;
-    }
-    if (window.germesData.pendingResponse.status === 'unsettled') {
-      log('Обработка ставки завершена (unsettled)', 'orange');
-      window.germesData.betPlaced = true;
-      return false;
-    }
-    if (window.germesData.pendingResponse.status === 'rejected') {
-      log('Обработка ставки завершена (rejected)', 'orange');
-      window.germesData.loadingStep = 'beforeUpdateQuote';
-      return true;
-    }
-    if (
-      window.germesData.pendingResponse.status === 500 ||
-      window.germesData.pendingResponse.status === '500'
-    ) {
-      if (window.germesData.pendingResponse.status === 500) {
-        log('Обработка ставки (int(500))', 'tan');
-      }
-      if (window.germesData.pendingResponse.status === '500') {
-        log('Обработка ставки (str(500))', 'tan');
-      }
-      window.germesData.pendingDelay = false;
-      setTimeout(() => {
-        window.germesData.pendingDelay = true;
-      }, 1000);
-      window.germesData.loadingStep = 'pendingDelay';
-      return true;
-    }
-    log(
-      `Неизвестный статус pending: ${window.germesData.pendingResponse.status}`,
-      'crimson',
-    );
-    log('Обработка ставки завершена', 'orange');
-    window.germesData.loadingStep = 'beforeUpdateQuote';
-    return true;
-  }
-  if (window.germesData.loadingStep === 'pendingDelay') {
-    if (!window.germesData.pendingDelay) {
-      log('Обработка ставки (pending delay)', 'tan');
-      return true;
-    }
-    log('Обработка ставки (pending delay end)', 'tan');
-    window.germesData.loadingStep = 'sendPending';
-    return true;
-  }
-  if (window.germesData.loadingStep === 'beforeUpdateQuote') {
-    log('Обновляем данные о ставке', 'tan');
-    updateQuote().then((result) => {
-      if (result !== 'success') {
-        log(result, 'crimson');
-        window.germesData.loadingStep = 'updateQuoteFail';
-      } else {
-        window.germesData.loadingStep = 'updateQuoteOk';
-      }
-    });
-    window.germesData.loadingStep = 'updateQuote';
-    return true;
-  }
-  if (window.germesData.loadingStep === 'updateQuote') {
-    log('Обновляем данные о ставке (ожидание)', 'tan');
-    return true;
-  }
-  if (window.germesData.loadingStep === 'updateQuoteFail') {
-    log('Ошибка обновления данных о ставке', 'orange');
-    return false;
-  }
-  if (window.germesData.loadingStep === 'updateQuoteOk') {
-    log('Обновили данные о ставке', 'orange');
-    return false;
-  }
-  log(`Неизвестный step: ${window.germesData.loadingStep}`, 'crimson');
-  log('Обработка ставки завершена', 'orange');
-  return false;
+    },
+    timeout: {
+      entry: async () => {
+        window.germesData.betProcessingAdditionalInfo = null;
+        checkCouponLoadingError({
+          botMessage: 'Не дождались результата ставки',
+          informMessage: 'Не дождались результата ставки',
+        });
+        machine.end = true;
+      },
+    },
+  });
+
+  machine.start('start');
 };
+
+const checkCouponLoading = checkCouponLoadingGenerator({
+  asyncCheck,
+});
 
 export default checkCouponLoading;

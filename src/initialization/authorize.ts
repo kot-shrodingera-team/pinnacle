@@ -35,7 +35,7 @@ const authorize = authorizeGenerator({
     updateBalance,
     afterSuccesfulLogin,
   },
-  context: () => document,
+  // context: () => document,
 });
 
 export default authorize;

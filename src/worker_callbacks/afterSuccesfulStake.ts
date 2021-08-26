@@ -1,3 +1,3 @@
-const afterSuccesfulStake = (): void => {};
+// const afterSuccesfulStake = (): void => {};
 
-export default afterSuccesfulStake;
+// export default afterSuccesfulStake;
